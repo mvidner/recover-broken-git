@@ -43,6 +43,9 @@ Requirements:
   so that `svn export` understands `--ignore-keywords`
 - disk space: for *N* TODO copies of ...
 
+recover-branch
+==============
+
 The `recover-branch` script takes these arguments:
 1 broken and 2 fixed git repos of a subverison module
 3 git branch name
@@ -66,23 +69,27 @@ Testing:
     o---o---o---o---o---o   Production/$BRANCH
         |       ^       ^
          \      |       ` further development in git. contributors abound!
-          \     ` (subversion ends, unmerked in git)
-           -O---O Fixed/$BRANCH
+          \     ` (subversion ends, unmarked in git)
+           -O---O Fixed/$BRANCH, $BRANCH
 
-- marks where svn ended
+- compares the trees of Subversion and Testing (tip only)
+- renames the branch refs for the Production remote:  (TODO tags)
+  and explicitly marks where svn ended
 
 Testing:
 
-    o---o---o---o---o---o   Production/$BRANCH
+    o---o---o---o---o---o   broken/$BRANCH
         |       ^         
-         \      |                                                         
-          \     ` Production/svn/$BRANCH
-           -O---O Fixed/$BRANCH, Fixed/svn/$BRANCH
+         \      ` broken/svn/$BRANCH
+          \     
+           -O---O svn/$BRANCH, $BRANCH
 
-- compares the trees of Subversion and Testing (tip only)
-- sets Production/broken/$BRANCH = Production/$BRANCH 
-- sets Production/$BRANCH        = Fixed/$BRANCH
+
+
 - ifTODO do nothing if Fixed is a subset of Production
+
+recover-repo
+============
 
 `recover-repo` uses `recover-branch` for all branches and (optionally) pushes
 the result to Production
@@ -93,6 +100,9 @@ the result to Production
   branches/$BRANCH/$MODULE then no map is needed. Otherwise it defines the
    mapping of git branches to subversion branches(?), on lines of the form
   git_branch1 <whitespace> subversion_branch
+
+recover-all-yast
+================
 
 `recover-all-yast` uses `recover-repo` on all the YaST repositories
 
