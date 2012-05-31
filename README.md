@@ -66,11 +66,11 @@ it
 
 Testing:
 
-    o---o---o---o---o---o   Production/$BRANCH
+    o---o---o---o---o---o   remotes/production/$BRANCH
         |       ^       ^
          \      |       ` further development in git. contributors abound!
           \     ` (subversion ends, unmarked in git)
-           -O---O Fixed/$BRANCH, $BRANCH
+           -O---O remotes/fixed/$BRANCH, $BRANCH
 
 - compares the trees of Subversion and Testing (tip only)
 - renames the branch refs for the Production remote:  (TODO tags)
@@ -78,15 +78,54 @@ Testing:
 
 Testing:
 
+    o---o---o---o---o---o   broken/$BRANCH, $BRANCH
+        |       ^         
+         \      ` broken/svn/$BRANCH
+          \     
+           -O---O
+                ^         
+                ` svn/$BRANCH
+
+- TODO do nothing if Fixed is a subset of Production
+
+- rebase:
+
+Testing:
+
+    git rebase --onto svn/$BRANCH broken/svn/$BRANCH $BRANCH
+
     o---o---o---o---o---o   broken/$BRANCH
         |       ^         
          \      ` broken/svn/$BRANCH
           \     
-           -O---O svn/$BRANCH, $BRANCH
+           -O---O---o---o   $BRANCH
+                ^         
+                ` svn/$BRANCH
+
+- TODO: how to push
 
 
+- what users will see:
 
-- ifTODO do nothing if Fixed is a subset of Production
+User's local repo, having developed on top of Production:
+
+    o---o---o---o---o---o---o---o $BRANCH
+                        ^         
+                        ` remotes/origin/$BRANCH
+
+The user will fetch and see the history changed (remotes/origin/$BRANCH moves):
+
+    o---o---o---o---o---o---o---o $BRANCH
+        |       ^       ^         
+        |       |       ` remotes/origin/broken/$BRANCH
+        |       |
+         \      ` remotes/origin/broken/svn/$BRANCH
+          \     
+           -O---O---o---o   remotes/origin/$BRANCH
+                ^         
+                ` remotes/origin/svn/$BRANCH
+
+...
 
 recover-repo
 ============
