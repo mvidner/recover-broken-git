@@ -1,5 +1,6 @@
 #!/bin/sh
-set -e
+set -o errexit
+set -o nounset
 LIB=$(cd $(dirname $0); pwd)
 
 PRODUCTION_REPO=$1
@@ -9,12 +10,13 @@ MODULE=$4
 BRANCH_MAP=$5
 
 WORK_DIR=/var/tmp/recover-broken-git
+mkdir -p $WORK_DIR
 cd $WORK_DIR
 
 MODULE_DIR=${PRODUCTION_REPO##*/}
 
 if [ ! -d $MODULE_DIR ]; then
-    git clone --mirror $PRODUCITON_REPO $MODULE_DIR
+    git clone --bare $PRODUCTION_REPO $MODULE_DIR
 fi
 cd $MODULE_DIR
 git fetch origin

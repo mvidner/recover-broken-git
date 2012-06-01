@@ -1,6 +1,8 @@
 #!/bin/sh
 # see README.md
 
+set -o errexit
+set -o nounset
 LIB=$(cd $(dirname $0); pwd)
 
 MODULES="core"
@@ -16,7 +18,7 @@ SVN_ROOT=file:///home/mvidner/2/yast2git/yast-svn
 
 BRANCH_MAP=$LIB/yast-branch-map
 
-for M in $MODULES; do
+for MODULE in $MODULES; do
     PRODUCTION_REPO=`printf $PRODUCTION_BASE $MODULE`
     FIXED_REPO=`printf $FIXED_BASE $MODULE`
     $LIB/recover-repo $PRODUCTION_REPO $FIXED_REPO $SVN_ROOT $MODULE $BRANCH_MAP
