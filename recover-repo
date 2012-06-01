@@ -24,11 +24,57 @@ git fetch origin
 git remote | grep fixed || git remote add fixed $FIXED_REPO
 git fetch fixed
 
-exit 1
+# (cut: cut the columns with the * marker of the current branch)
+#BRANCHES=`git branch | cut -c3-`
+BRANCHES="master Code-11-SP2"
 
-BRANCHES=master
-# FIXME
-$LIB/recover-branch
+# $1 SVN URL (ROOT/BRANCH/MODULE)
+# $2 git repo as a local directory
+# $3 git branch
+# $4 name; optional, basename of svn url is used
+# result: diff sent to stdout, working dirs are removed
+svn_git_compare() {
+   local SVNREPO="$1"
+   local GITREPO="$2"
+   local GITBRANCH="$3"
+   local NAME="${4-${SVNREPO##*/}}"
 
+   DIR=`mktemp -d`
+   pushd $DIR >/dev/null
 
-    $LIB/recover-branch $PRODUCTION_REPO $FIXED_REPO $BRANCH $SVN_TREE
+   svn export --quiet --ignore-keywords $SVNREPO $NAME-svn
+
+   # FIXME until
+   LAST_SVN_TREE=$(cd ${GITREPO#file://}; git rev-list -n1 --until=2012-05-17 $GITBRANCH)
+   git archive --format=tar --prefix $NAME-git/ \
+       --remote=$GITREPO $LAST_SVN_TREE \
+       | tar xf -
+
+   SAME=true
+   # git-diff better than plain diff
+   git --no-pager diff $NAME-svn $NAME-git || SAME=false
+
+   popd >/dev/null
+   rm -rf $DIR
+   $SAME # can stop everything
+}
+
+for BRANCH in $BRANCHES; do
+    SVN_BRANCH=`sed -n "s/^$BRANCH[[:space:]]\+//;T;p;q" $BRANCH_MAP`
+
+    if [ -n "$SVN_BRANCH" ]; then
+        SVN_BRANCH=branches/$SVN_BRANCH
+    elif [ $BRANCH = master  ]; then
+        SVN_BRANCH=trunk
+    else
+        SVN_BRANCH=branches/$BRANCH
+    fi
+
+    SVN_TREE=$SVN_ROOT/$SVN_BRANCH/$MODULE
+    # $LIB/recover-branch $PRODUCTION_REPO $FIXED_REPO $BRANCH $SVN_TREE
+    # inlined:
+
+    # compare
+    svn_git_compare $SVN_TREE `pwd` fixed/$BRANCH
+
+done
