@@ -44,22 +44,25 @@ svn_git_compare() {
 
    svn export --quiet --ignore-keywords $SVNREPO $NAME-svn
 
-   # FIXME until
-   LAST_SVN_TREE=$(cd ${GITREPO#file://}; git rev-list -n1 --until=2012-05-17 $GITBRANCH)
    git archive --format=tar --prefix $NAME-git/ \
-       --remote=$GITREPO $LAST_SVN_TREE \
+       --remote=$GITREPO $GITBRANCH \
        | tar xf -
 
    SAME=true
    # git-diff better than plain diff
-   git --no-pager diff $NAME-svn $NAME-git || SAME=false
+   git --no-pager diff $NAME-svn $NAME-git | tee $DIR/repo.diff
+   # non-empty diff => fail
+   test -s $DIR/repo.diff && SAME=false
 
    popd >/dev/null
    rm -rf $DIR
    $SAME # can stop everything
 }
 
-for BRANCH in $BRANCHES; do
+svn_branch_from_git_branch() {
+    local BRANCH=$1
+    local SVN_BRANCH
+
     SVN_BRANCH=`sed -n "s/^$BRANCH[[:space:]]\+\([^[:space:]]*\).*/\1/;T;p;q" $BRANCH_MAP`
 
     if [ -n "$SVN_BRANCH" ]; then
@@ -69,12 +72,57 @@ for BRANCH in $BRANCHES; do
     else
         SVN_BRANCH=branches/$BRANCH
     fi
+    echo $SVN_BRANCH
+}
 
+# $1 git branch
+last_commit_in_svn() {
+    git rev-list -n1 --grep="svn path=/.*; revision=" $1
+}
+
+RECOVERY_NEEDED=false
+
+for BRANCH in $BRANCHES; do
+    SVN_BRANCH=`svn_branch_from_git_branch $BRANCH`
     SVN_TREE=$SVN_ROOT/$SVN_BRANCH/$MODULE
-    # $LIB/recover-branch $PRODUCTION_REPO $FIXED_REPO $BRANCH $SVN_TREE
-    # inlined:
 
-    # compare
-    svn_git_compare "$SVN_TREE" `pwd` fixed/$BRANCH
+    # ensure that we have a tag pointing to the last commit in SVN
+    LAST_COMMIT_IN_SVN=$(git rev-list -n1 svn/$BRANCH -- || true)
+    if [ -z "$LAST_COMMIT_IN_SVN" ]; then
+        LAST_COMMIT_IN_SVN=$(last_commit_in_svn $BRANCH)
+        git tag svn/$BRANCH $LAST_COMMIT_IN_SVN
+    fi
 
+    # compare the production repo. if there is no difference we can continue
+    # with the next branch
+    if svn_git_compare "$SVN_TREE" `pwd` svn/$BRANCH; then
+        echo $MODULE/$BRANCH is OK already
+        continue
+    fi
+    echo $MODULE/$BRANCH needs recovery
+    # but even if only one tree is different,
+    # the history of all child trees changes
+    RECOVERY_NEEDED=true
+done
+
+if ! $RECOVERY_NEEDED; then
+    echo $MODULE is ALL OK already
+    exit 0
+fi
+
+echo "GONNA FIX, HOLD ON TO YOUR HAT"
+
+for BRANCH in $BRANCHES; do
+    SVN_BRANCH=`svn_branch_from_git_branch $BRANCH`
+    SVN_TREE=$SVN_ROOT/$SVN_BRANCH/$MODULE
+
+    # there is a difference.
+    # compare that the fixed repo has no difference
+    svn_git_compare "$SVN_TREE" `pwd` `last_commit_in_svn fixed/$BRANCH`
+
+    # next: rename  branch refs
+    # rename tag refs
+    # rebase
+
+    # push. failsafe? iterate?
 done

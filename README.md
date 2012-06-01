@@ -3,6 +3,9 @@ Recovering from a broken Subversion-Git migration
 
 It is not Subversion's fault, BTW.
 
+1) Code 2) Publish 3) Test.
+Does not work if Publish operates on entire Git repos.
+
 1. Convert your Subversion repository to Git
 2. Publish the result, announce it
 3. Test it
@@ -12,7 +15,7 @@ It is not Subversion's fault, BTW.
 7. This writeup
 
 A tool that we used to migrate the YaST repositories, had bugs, which resulted
-in differences in content and properties of files.
+in differences in content and properties of files. (TODO links)
 
 Subversion repo, read only:
 
@@ -32,7 +35,7 @@ Fixed repo:
                 ` subversion ends
 
 To complicate matters, have more branches than _master_ (you'd easily
-guess that), about 7 of them. And we have not one repo but 150 of them. 
+guess that), about 20 of them. And we have not one repo but 150 of them. 
 
 Assumption: one Subversion repo becomes multiple Git repos, spliting by module.
 
@@ -43,36 +46,55 @@ Requirements:
   so that `svn export` understands `--ignore-keywords`
 - disk space: for *N* TODO copies of ...
 
-recover-branch
-==============
+recover-repo
+============
 
-The `recover-branch` script takes these arguments:
-1 broken and 2 fixed git repos of a subverison module
-3 git branch name
-4 svn url specific to the module and branch
+The `recover-repo` script takes these arguments:
 
-- *Production Git URL*  (read-write access)
-  TODO add a dry-run mode
-  
+1. *Production Git URL*
+   (read-write access)
+   TODO add a dry-run mode 
 
-- *Fixed Git URL*  (read-only access)
-:
-- git branch name
-- *Subversion URL* (read-only access)
-:  eg. file:///home/mvidner/2/yast2git/yast-svn
+2. *Fixed Git URL*
+   (read-only access)
+   diverging from 1) in having actually correct contents
 
-it
-- sets up a Testing repo that has Production and Fixed as remotes
+3. *Subversion URL*
+   (read-only access)
+   a root url (with all branches and modules)
+
+4. *Subversion module name*
+   corresponding to the git repos 1) and 2)
+
+5. *branch map file*
+   (TODO make it optional)
+   Needed for cases where a git branch *b* corresponds to something else than
+   the svn branch branches/*b*
+
+What it does:
+
+- sets up a Testing repo that
+  is a bare clone of Production and
+  has Fixed as a remote
+
+- repeats the following for all git branches (TODO and tags, sans rebasing)
+
+- finds and tags where the subversion part of the history ends
 
 Testing:
 
-    o---o---o---o---o---o   remotes/production/$BRANCH
+    o---o---o---o---o---o   $BRANCH
         |       ^       ^
          \      |       ` further development in git. contributors abound!
-          \     ` (subversion ends, unmarked in git)
-           -O---O remotes/fixed/$BRANCH, $BRANCH
+          \     ` svn/$BRANCH
+           -O---O remotes/fixed/$BRANCH
 
 - compares the trees of Subversion and Testing (tip only)
+
+* * *
+(the code is tested up to here)
+* * *
+
 - renames the branch refs for the Production remote:  (TODO tags)
   and explicitly marks where svn ended
 
@@ -127,18 +149,6 @@ The user will fetch and see the history changed (remotes/origin/$BRANCH moves):
 
 ...
 
-recover-repo
-============
-
-`recover-repo` uses `recover-branch` for all branches and (optionally) pushes
-the result to Production
-
-- *branch map file*, optional:
-  we start by looking at the git branches [older than the import date?].
-  If master corresponds to trunk/$MODULE and the branches are all of the form
-  branches/$BRANCH/$MODULE then no map is needed. Otherwise it defines the
-   mapping of git branches to subversion branches(?), on lines of the form
-  git_branch1 <whitespace> subversion_branch
 
 recover-all-yast
 ================

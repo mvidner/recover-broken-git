@@ -5,7 +5,7 @@ set -o errexit
 set -o nounset
 LIB=$(cd $(dirname $0); pwd)
 
-MODULES="core"
+MODULES="country"
 
 # %s is the module
 PRODUCTION_BASE=git@github.com:yast/yast-%s.git
