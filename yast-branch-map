@@ -1,0 +1,22 @@
+# Format: git_branch whitespace svn_branch_without_"branches/"
+Code-11             SuSE-Code-11-Branch 
+Code-11-SP1         SuSE-Code-11-SP1-Branch
+Code-11-SP2         SuSE-Code-11-SP2-Branch
+Code-11-SP3         SuSE-Code-11-SP3-Branch
+REFACTORING-10_3    REFACTORING-10_3
+SLE-10              SuSE-SLE-10-Branch
+SLE-10-SP1          SuSE-SLE-10-SP1-Branch
+SLE-10-SP1-Features SuSE-SLE-10-SP1-Features-Branch
+SLE-10-SP2          SuSE-SLE-10-SP2-Branch
+SLE-10-SP3          SuSE-SLE-10-SP3-Branch          
+SLE-10-SP4          SuSE-SLE-10-SP4-Branch          
+openSUSE-9_3        SuSE-Linux-9_3-Branch
+openSUSE-10_0       SuSE-Linux-10_0-Branch
+openSUSE-10_1       SuSE-Linux-10_1-Branch
+openSUSE-10_2       SuSE-Linux-10_2-Branch
+openSUSE-10_3       SuSE-Linux-10_3-Branch
+openSUSE-11_0       SuSE-Linux-11_0-Branch
+openSUSE-11_2       SuSE-Linux-11_2-Branch
+openSUSE-11_3       SuSE-Linux-11_3-Branch
+openSUSE-11_4       SuSE-Linux-11_4-Branch
+openSUSE-12_1       SuSE-Linux-12_1-Branch

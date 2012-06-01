@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+LIB=$(cd $(dirname $0); pwd)
+
+PRODUCTION_REPO=$1
+FIXED_REPO=$2
+SVN_ROOT=$3
+MODULE=$4
+BRANCH_MAP=$5
+
+WORK_DIR=/var/tmp/recover-broken-git
+cd $WORK_DIR
+
+MODULE_DIR=${PRODUCTION_REPO##*/}
+
+if [ ! -d $MODULE_DIR ]; then
+    git clone --mirror $PRODUCITON_REPO $MODULE_DIR
+fi
+cd $MODULE_DIR
+git fetch origin
+
+git remote | grep fixed || git remote add fixed $FIXED_REPO
+git fetch fixed
+
+exit 1
+
+BRANCHES=master
+# FIXME
+$LIB/recover-branch
+
+
+    $LIB/recover-branch $PRODUCTION_REPO $FIXED_REPO $BRANCH $SVN_TREE

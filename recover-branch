@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+LIB=$(cd $(dirname $0); pwd)
+

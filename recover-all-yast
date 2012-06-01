@@ -1,0 +1,23 @@
+#!/bin/sh
+# see README.md
+
+LIB=$(cd $(dirname $0); pwd)
+
+MODULES="core"
+
+# %s is the module
+PRODUCTION_BASE=git@github.com:yast/yast-%s.git
+# %s is the module
+FIXED_BASE=http://www3.zq1.de/bernhard/linux/yast/yast-%s.git
+# the original svn repo:
+# SVN_ROOT=https://svn.opensuse.org/svn/yast/
+# but I use a local mirror:
+SVN_ROOT=file:///home/mvidner/2/yast2git/yast-svn
+
+BRANCH_MAP=$LIB/yast-branch-map
+
+for M in $MODULES; do
+    PRODUCTION_REPO=`printf $PRODUCTION_BASE $MODULE`
+    FIXED_REPO=`printf $FIXED_BASE $MODULE`
+    $LIB/recover-repo $PRODUCTION_REPO $FIXED_REPO $SVN_ROOT $MODULE $BRANCH_MAP
+done
