@@ -25,8 +25,8 @@ git remote | grep fixed || git remote add fixed $FIXED_REPO
 git fetch fixed
 
 # (cut: cut the columns with the * marker of the current branch)
-#BRANCHES=`git branch | cut -c3-`
-BRANCHES="master Code-11-SP2"
+BRANCHES=`git branch | cut -c3-`
+#BRANCHES="master Code-11-SP2"
 
 # $1 SVN URL (ROOT/BRANCH/MODULE)
 # $2 git repo as a local directory
@@ -60,7 +60,7 @@ svn_git_compare() {
 }
 
 for BRANCH in $BRANCHES; do
-    SVN_BRANCH=`sed -n "s/^$BRANCH[[:space:]]\+//;T;p;q" $BRANCH_MAP`
+    SVN_BRANCH=`sed -n "s/^$BRANCH[[:space:]]\+\([^[:space:]]*\).*/\1/;T;p;q" $BRANCH_MAP`
 
     if [ -n "$SVN_BRANCH" ]; then
         SVN_BRANCH=branches/$SVN_BRANCH
@@ -75,6 +75,6 @@ for BRANCH in $BRANCHES; do
     # inlined:
 
     # compare
-    svn_git_compare $SVN_TREE `pwd` fixed/$BRANCH
+    svn_git_compare "$SVN_TREE" `pwd` fixed/$BRANCH
 
 done
