@@ -5,16 +5,18 @@ set -o errexit
 set -o nounset
 LIB=$(cd $(dirname $0); pwd)
 
-MODULES="country"
+MODULES="bootloader"
+#MODULES=`cat brokenlist`
 
 # %s is the module
-PRODUCTION_BASE=git@github.com:yast/yast-%s.git
+PRODUCTION_BASE=git://github.com/yast/yast-%s.git
+#PRODUCTION_BASE=git@github.com:yast/yast-%s.git
 # %s is the module
-FIXED_BASE=http://www3.zq1.de/bernhard/linux/yast/yast-%s.git
+FIXED_BASE=/var/lib/yast/migration.fixed/yast-%s.git
 # the original svn repo:
 # SVN_ROOT=https://svn.opensuse.org/svn/yast/
 # but I use a local mirror:
-SVN_ROOT=file:///home/mvidner/2/yast2git/yast-svn
+SVN_ROOT=file:///dev/shm/REPO
 
 BRANCH_MAP=$LIB/yast-branch-map
 
