@@ -146,7 +146,12 @@ for BRANCH in $BRANCHES; do
 		git clone $D tmp.$BRANCH
 		cd tmp.$BRANCH
 		[ "$BRANCH" = master ] || git branch $BRANCH origin/$BRANCH
-		git rebase --preserve-merges --onto svn/$BRANCH broken/svn/$BRANCH $BRANCH # need non-bare repo
+		if ! git rebase --preserve-merges --onto svn/$BRANCH broken/svn/$BRANCH $BRANCH ; then 
+			# if someone re-added the executable bits the above breaks because of an empty commit
+			# so we retry it without --preserve-merges to make it work
+			git rebase --abort
+			git rebase --onto svn/$BRANCH broken/svn/$BRANCH $BRANCH
+		fi
 		git push -f origin $BRANCH
 		cd ..
 		rm -rf tmp.$BRANCH
