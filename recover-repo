@@ -132,6 +132,13 @@ for BRANCH in $BRANCHES; do
 	git rev-list -n1 fixed/$BRANCH || HAVEBRANCH=false
     if $HAVEBRANCH ; then
 	   	svn_git_compare "$SVN_TREE" `pwd` `last_commit_in_svn fixed/$BRANCH`
+		# compare and skip if equal
+		currentrev=`git rev-list -n1 $BRANCH`
+		fixedrev=`git rev-list -n1 fixed/$BRANCH || true`
+		if test $currentrev = $fixedrev ; then
+			echo "skipping branch '$BRANCH'"
+			continue
+		fi
 	fi
 
     # next: rename  branch refs
