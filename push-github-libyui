@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#YMODULESALL=`cat brokenlist`
+#YMODULESALL="tune"
+YMODULESALL="ncurses"
+D=/var/tmp/recover-broken-git/
+
+E=echo
+E=
+
+
+for MOD in $YMODULESALL
+do
+  YMOD=libyui-$MOD
+  $E pushd $D$YMOD.git
+  $E git remote set-url origin git@github.com:libyui/${YMOD}.git
+  #for i in `git branch | cut -c3-` ;
+  #do
+  #  $E git checkout $i
+  #done
+  #$E git checkout master
+  $E echo "=================="
+  read -p "Push $MOD??  Press Ctrl-C to abort."
+  $E git push -f --all origin
+  $E git push -f --tags
+  $E popd
+done
+
