@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/sh -x
 set -o errexit
 set -o nounset
 LIB=$(cd $(dirname $0); pwd)
+rm -rf /tmp/tmp.* # cleanup broken checkout
 
 PRODUCTION_REPO=$1
 FIXED_REPO=$2
@@ -17,6 +18,9 @@ MODULE_DIR=${PRODUCTION_REPO##*/}
 
 if [ ! -d $MODULE_DIR ]; then
     git clone --bare $PRODUCTION_REPO $MODULE_DIR
+else
+	echo "already done '$MODULE' - skipping"
+	exit 0
 fi
 cd $MODULE_DIR
 git fetch origin
@@ -25,7 +29,7 @@ git remote | grep fixed || git remote add fixed $FIXED_REPO
 git fetch fixed
 
 # (cut: cut the columns with the * marker of the current branch)
-BRANCHES=`git branch | cut -c3-`
+BRANCHES=`git branch | cut -c3- | grep -v broken/`
 #BRANCHES="master Code-11-SP2"
 
 # $1 SVN URL (ROOT/BRANCH/MODULE)
@@ -44,8 +48,8 @@ svn_git_compare() {
 
    svn export --quiet --ignore-keywords $SVNREPO $NAME-svn
 
-   git archive --format=tar --prefix $NAME-git/ \
-       --remote=$GITREPO $GITBRANCH \
+   (cd $GITREPO ; git archive --format=tar --prefix $NAME-git/ \
+       $GITBRANCH ) \
        | tar xf -
 
    SAME=true
@@ -95,6 +99,12 @@ for BRANCH in $BRANCHES; do
 
     # compare the production repo. if there is no difference we can continue
     # with the next branch
+	currentrev=`git rev-list -n1 $BRANCH`
+	fixedrev=`git rev-list -n1 fixed/$BRANCH || true`
+	if test $currentrev != $fixedrev ; then
+		echo "SHA1 sums differ"
+	    RECOVERY_NEEDED=true
+	fi
     if svn_git_compare "$SVN_TREE" `pwd` svn/$BRANCH; then
         echo $MODULE/$BRANCH is OK already
         continue
@@ -118,11 +128,51 @@ for BRANCH in $BRANCHES; do
 
     # there is a difference.
     # compare that the fixed repo has no difference
-    svn_git_compare "$SVN_TREE" `pwd` `last_commit_in_svn fixed/$BRANCH`
+	HAVEBRANCH=true
+	git rev-list -n1 fixed/$BRANCH || HAVEBRANCH=false
+    if $HAVEBRANCH ; then
+	   	svn_git_compare "$SVN_TREE" `pwd` `last_commit_in_svn fixed/$BRANCH`
+		# compare and skip if equal
+		currentrev=`git rev-list -n1 $BRANCH`
+		fixedrev=`git rev-list -n1 fixed/$BRANCH || true`
+		if test $currentrev = $fixedrev ; then
+			echo "skipping branch '$BRANCH'"
+			continue
+		fi
+	fi
 
     # next: rename  branch refs
-    # rename tag refs
-    # rebase
+	git branch broken/$BRANCH $BRANCH || true # rename to broken, but do not overwrite later
+	git tag broken/svn/$BRANCH svn/$BRANCH || true
+	# assume last commit on remotes/fixed/$BRANCH is from SVN
+    if $HAVEBRANCH ; then
+		git tag -f svn/$BRANCH remotes/fixed/$BRANCH
+		# rebase
+		D=`pwd`
+		pushd /tmp
+		git clone $D tmp.$BRANCH
+		cd tmp.$BRANCH
+		[ "$BRANCH" = master ] || git branch $BRANCH origin/$BRANCH
+		if ! git rebase --preserve-merges --onto svn/$BRANCH broken/svn/$BRANCH $BRANCH ; then 
+			# if someone re-added the executable bits the above breaks because of an empty commit
+			# so we retry it without --preserve-merges to make it work
+			git rebase --abort
+			git rebase --onto svn/$BRANCH broken/svn/$BRANCH $BRANCH
+		fi
+		git push -f origin $BRANCH
+		cd ..
+		rm -rf tmp.$BRANCH
+		popd
+	else
+		echo "removing old broken branch '$BRANCH' (dropped module)"
+		# because we can not delete the branch we are on
+		echo "ref: refs/heads/broken/$BRANCH" > HEAD
+		git branch -d $BRANCH
+	fi
 
     # push. failsafe? iterate?
 done
+
+# update tag refs to fixed ones
+git fetch fixed --tags
+
